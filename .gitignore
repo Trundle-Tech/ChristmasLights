@@ -21,3 +21,8 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Deployment files with secrets
+DEPLOYMENT.md
+netlify.toml
+netlify/

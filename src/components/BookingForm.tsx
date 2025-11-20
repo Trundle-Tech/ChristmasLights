@@ -33,9 +33,6 @@ const BookingForm = () => {
   const [bookedDates, setBookedDates] = useState<BookedDate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [completed, setCompleted] = useState(false);
-  const [submittedData, setSubmittedData] = useState<Partial<FormData> & { date?: string }>();
   const [availableDates, setAvailableDates] = useState<string[]>([]);
 
   // Generate dates from November 20, 2025 to December 11, 2025
@@ -202,22 +199,9 @@ const BookingForm = () => {
         );
       }
 
-      // Store submitted data for completion page
-      setSubmittedData({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        date: formData.date,
-        lightOption: formData.lightOption,
-      });
-
-      setSuccess(true);
-
-      // Show completion page after 2 seconds
-      setTimeout(() => {
-        setCompleted(true);
-        setSuccess(false);
-      }, 2000);
+      // Redirect to Square payment page immediately
+      const squareUrl = `https://square.link/u/gbJgBAFZ?customerName=${encodeURIComponent(formData.name)}&customerEmail=${encodeURIComponent(formData.email)}&bookingDate=${encodeURIComponent(formatDateForWebhook(formData.date))}`;
+      window.location.href = squareUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -279,87 +263,6 @@ const BookingForm = () => {
     setCurrentStep(currentStep - 1);
   };
 
-  // Render completion page if booking is complete
-  if (completed && submittedData) {
-    return (
-      <div className="booking-form-container">
-        <div className="completion-page">
-          <div className="completion-icon">✓</div>
-          <h1>Booking Confirmed!</h1>
-          <p className="confirmation-subtitle">Thank you for choosing our service</p>
-
-          <div className="confirmation-details">
-            <h2>Installation Details</h2>
-            <div className="detail-row">
-              <span className="detail-label">Name:</span>
-              <span className="detail-value">{submittedData.name}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Email:</span>
-              <span className="detail-value">{submittedData.email}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Phone:</span>
-              <span className="detail-value">{submittedData.phone}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Installation Date:</span>
-              <span className="detail-value">{formatDate(submittedData.date || '')}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Light Options:</span>
-              <span className="detail-value">{formatLightOption(submittedData.lightOption || '')}</span>
-            </div>
-          </div>
-
-          <div className="payment-section">
-            <h2>Payment Required</h2>
-            <p className="payment-instruction">Complete your booking by paying the $200 deposit below:</p>
-            <a
-              href={`https://square.link/u/gbJgBAFZ?customerName=${encodeURIComponent(submittedData.name || '')}&customerEmail=${encodeURIComponent(submittedData.email || '')}&bookingDate=${encodeURIComponent(formatDateForWebhook(submittedData.date || ''))}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="square-payment-button"
-            >
-              Pay $200 Deposit Now
-            </a>
-            <p className="payment-note">You'll be redirected to our secure payment page. Your booking is reserved once payment is complete.</p>
-          </div>
-
-          <div className="next-steps">
-            <h2>What's Next?</h2>
-            <ul>
-              <li>Pay the $200 deposit using the button above</li>
-              <li>You'll receive a confirmation email at <strong>{submittedData.email}</strong></li>
-              <li>We'll contact you to confirm your installation date</li>
-              <li>Get ready for beautiful Christmas lights!</li>
-            </ul>
-          </div>
-
-          <button
-            className="new-booking-button"
-            onClick={() => {
-              setCompleted(false);
-              setFormData({
-                name: '',
-                address: '',
-                phone: '',
-                email: '',
-                date: '',
-                lightOption: 'clear-red',
-                tipColor: '',
-                agreeTerms: false,
-              });
-              setSubmittedData(undefined);
-            }}
-          >
-            Make Another Booking
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="booking-form-container">
       {currentStep > 1 && (
@@ -390,12 +293,6 @@ const BookingForm = () => {
         </div>
       )}
 
-      {success && (
-        <div className="success-message">
-          Booking submitted successfully! We'll contact you soon to confirm your installation date.
-        </div>
-      )}
-
       {error && (
         <div className="error-message">
           {error}
@@ -414,7 +311,8 @@ const BookingForm = () => {
         </div>
       )}
 
-      <form onSubmit={currentStep === 5 ? handleSubmit : (e) => { e.preventDefault(); handleNextStep(); }} className="booking-form">
+      {currentStep > 1 && (
+        <form onSubmit={currentStep === 5 ? handleSubmit : (e) => { e.preventDefault(); handleNextStep(); }} className="booking-form">
         {/* Step 2: Date Selection */}
         {currentStep === 2 && (
           <div className="step-content">
@@ -641,6 +539,7 @@ const BookingForm = () => {
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 };
